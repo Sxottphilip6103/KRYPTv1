@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRYPT // Deterministic Key Engine</title>
+    <style>
+        :root {
+            --bg-pure: #000000;
+            --bg-card: #0a0a0a;
+            --border-main: #262626;
+            --border-focus: #ffffff;
+            --text-pure: #ffffff;
+            --text-muted: #737373;
+            --accent-glow: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-pure);
+            color: var(--text-pure);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Top Bar Utilities for Meta Guidance */
+        .utility-bar {
+            width: 100%;
+            max-width: 440px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 0 4px;
+        }
+
+        .system-guidance {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        /* Micro-pulsing indicator to guide interaction */
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #00ff66;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #00ff66;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+
+        .info-trigger {
+            background: none;
+            border: 1px solid var(--border-main);
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .info-trigger:hover {
+            color: var(--text-pure);
+            border-color: var(--border-focus);
+            background-color: var(--accent-glow);
+        }
+
+        /* Explanatory Context Board Panel */
+        .info-panel {
+            background-color: #0f0f0f;
+            border: 1px solid var(--border-main);
+            padding: 20px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 440px;
+            box-sizing: border-box;
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .info-panel h4 {
+            margin-top: 0;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-pure);
+            border-bottom: 1px solid var(--border-main);
+            padding-bottom: 8px;
+        }
+
+        .info-panel p {
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: #a3a3a3;
+            margin: 0 0 12px 0;
+        }
+
+        .info-panel ul {
+            margin: 0;
+            padding-left: 16px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .brand-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .brand-logo {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .key-icon {
+            width: 32px;
+            height: 32px;
+            fill: none;
+            stroke: var(--text-pure);
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .brand-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            margin: 0;
+            padding-left: 8px;
+        }
+
+        .app-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-main);
+            width: 100%;
+            max-width: 440px;
+            padding: 32px;
+            border-radius: 0px;
+            box-sizing: border-box;
+        }
+
+        .triple-lock-container {
+            border: 1px solid var(--border-main);
+            padding: 18px;
+            margin-bottom: 24px;
+            background-color: rgba(255, 255, 255, 0.01);
+        }
+
+        .lock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-main);
+            padding-bottom: 8px;
+        }
+
+        .lock-title {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-pure);
+            margin: 0;
+        }
+
+        .visibility-toggle {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0;
+            outline: none;
+        }
+
+        .visibility-toggle:hover {
+            color: var(--text-pure);
+        }
+
+        .field-group {
+            margin-bottom: 16px;
+        }
+
+        .field-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            background-color: var(--bg-pure);
+            border: 1px solid var(--border-main);
+            color: var(--text-pure);
+            padding: 12px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            border-radius: 0px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 4px var(--accent-glow);
+        }
+
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .slider-input-sync {
+            width: 55px;
+            background-color: var(--bg-pure);
+            border: 1px solid var(--border-main);
+            color: var(--text-pure);
+            padding: 6px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            text-align: center;
+            border-radius: 0px;
+            outline: none;
+        }
+
+        .slider-input-sync:focus {
+            border-color: var(--border-focus);
+        }
+
+        .slider-container {
+            position: relative;
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 0;
+            accent-color: var(--text-pure);
+            background: var(--border-main);
+            height: 6px;
+            outline: none;
+            cursor: pointer;
+            border-radius: 0px;
+        }
+
+        .constraints-box {
+            border-top: 1px dashed var(--border-main);
+            margin-top: 24px;
+            padding-top: 20px;
+        }
+
+        .grid-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            cursor: pointer;
+            user-select: none;
+            padding: 10px;
+            border: 1px solid var(--border-main);
+            background-color: rgba(255, 255, 255, 0.005);
+            transition: border-color 0.2s, color 0.2s;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            display: none;
+        }
+
+        .custom-box {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border-main);
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background-color: var(--bg-pure);
+            transition: background-color 0.2s, border-color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .custom-box::after {
+            content: "✓";
+            font-size: 0.75rem;
+            font-weight: 900;
+            color: var(--bg-pure);
+            display: none;
+        }
+
+        .checkbox-wrapper input[type="checkbox"]:checked + .custom-box {
+            background-color: var(--text-pure);
+            border-color: var(--text-pure);
+        }
+
+        .checkbox-wrapper input[type="checkbox"]:checked + .custom-box::after {
+            display: block;
+        }
+
+        .checkbox-wrapper:has(input:checked) {
+            border-color: var(--border-focus);
+            color: var(--text-pure);
+        }
+
+        .action-button {
+            width: 100%;
+            background-color: var(--text-pure);
+            color: var(--bg-pure);
+            border: 1px solid var(--text-pure);
+            padding: 16px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            margin-top: 28px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .action-button:hover, .action-button:active {
+            background-color: var(--bg-pure);
+            color: var(--text-pure);
+        }
+
+        .output-viewport {
+            margin-top: 28px;
+            border: 1px solid var(--text-pure);
+            background-color: var(--bg-pure);
+            padding: 24px 20px;
+            text-align: center;
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+            scroll-margin-bottom: 20px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .output-viewport label {
+            text-align: center;
+            margin-bottom: 14px;
+        }
+
+        .secure-string {
+            font-family: "SF Mono", SFMono-Regular, Consolas, monospace;
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: var(--text-pure);
+            word-break: break-all;
+            user-select: all;
+            letter-spacing: 0.5px;
+            padding: 8px 0;
+        }
+
+        .clipboard-helper {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-top: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Professional Top Utility Bar with Guidance Element -->
+    <div class="utility-bar">
+        <div class="system-guidance">
+            <div class="live-dot"></div>
+            <span>Tap for Architecture Blueprint</span>
+        </div>
+        <button class="info-trigger" id="infoBtn" onclick="toggleInfoPanel()">[ Info ]</button>
+    </div>
+
+    <!-- Hidden Explanatory Panel Blueprint Space -->
+    <div class="info-panel" id="infoPanel">
+        <h4>System Mechanics Manual</h4>
+        <p>Krypt is a local-first, zero-database key derivation tool. Instead of storing your passwords, it dynamically computes them using mathematics.</p>
+        <p>By blending three independent secrets with a specific site identifier, it achieves zero-knowledge security:</p>
+        <ul>
+            <li>No cloud tracking or remote data storage.</li>
+            <li>Identical inputs consistently produce identical outputs.</li>
+            <li>Splitting variables across 3 inputs removes any single master security vulnerability.</li>
+        </ul>
+    </div>
+
+    <div class="brand-container">
+        <div class="brand-logo">
+            <svg class="key-icon" viewBox="0 0 24 24">
+                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3M15.5 7.5L19 4"/>
+            </svg>
+        </div>
+        <h1 class="brand-title">Krypt</h1>
+    </div>
+
+    <div class="app-card">
+        
+        <div class="triple-lock-container">
+            <div class="lock-header">
+                <h3 class="lock-title">Security Key Configuration</h3>
+                <button class="visibility-toggle" id="toggleMaskBtn" onclick="toggleKeysVisibility()">Show Keys</button>
+            </div>
+            
+            <div class="field-group">
+                <label for="keyPrimary">Key 1</label>
+                <input type="password" id="keyPrimary" placeholder="••••••••••••••••">
+            </div>
+
+            <div class="field-group">
+                <label for="keySecondary">Key 2</label>
+                <input type="password" id="keySecondary" placeholder="••••••••••••••••">
+            </div>
+
+            <div class="field-group">
+                <label for="keySalt">Key 3</label>
+                <input type="password" id="keySalt" placeholder="••••••••••••••••">
+            </div>
+        </div>
+
+        <div class="field-group">
+            <label for="siteName">Site / App Name</label>
+            <input type="text" id="siteName" placeholder="e.g., google, facebook, bank" autocomplete="off" autocapitalize="none">
+        </div>
+
+        <div class="field-group">
+            <div class="meta-row">
+                <label for="passLengthNum">Key Bit Length</label>
+                <input type="number" id="passLengthNum" class="slider-input-sync" min="4" max="32" value="16" oninput="syncInputs(this.value, 'slider')">
+            </div>
+            <div class="slider-container">
+                <input type="range" id="passLength" min="4" max="32" value="16" oninput="syncInputs(this.value, 'box')">
+            </div>
+        </div>
+
+        <div class="constraints-box">
+            <label>Parameters Ruleset</label>
+            <div class="grid-options">
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="chkUpper">
+                    <div class="custom-box"></div>
+                    <span>Caps (A-Z)</span>
+                </label>
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="chkLower">
+                    <div class="custom-box"></div>
+                    <span>Small (a-z)</span>
+                </label>
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="chkNum">
+                    <div class="custom-box"></div>
+                    <span>Numeric (0-9)</span>
+                </label>
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="chkSym">
+                    <div class="custom-box"></div>
+                    <span>Special (!@#)</span>
+                </label>
+            </div>
+        </div>
+
+        <button class="action-button" id="executeBtn" onclick="processKeyGeneration()">Enter Security Vault</button>
+
+        <div class="output-viewport" id="outputViewport">
+            <label>Generated Unique Password</label>
+            <div class="secure-string" id="finalPass">------</div>
+            <div class="clipboard-helper">Tap text to select & copy key</div>
+        </div>
+
+    </div>
+
+    <script>
+        // High-entropy hashing pipeline
+        function generateSeed(str) {
+            let h1 = 1779033703, h2 = 3024733165, h3 = 3362454305, h4 = 502494325;
+            for (let i = 0, k; i < str.length; i++) {
+                k = str.charCodeAt(i);
+                h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+                h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+                h3 = h4 ^ Math.imul(h4 ^ k, 951274213);
+                h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+            }
+            h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+            h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+            h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+            h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+            return [(h1^h2^h3^h4)>>>0, (h2^h1)>>>0, (h3^h1)>>>0, (h4^h1)>>>0];
+        }
+
+        function sfc32(a, b, c, d) {
+            return function() {
+                a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0;
+                let t = (a + b) | 0;
+                a = b ^ (b >>> 9);
+                b = (c + (c << 3)) | 0;
+                c = (c << 21) | (c >>> 11);
+                d = (d + 1) | 0;
+                t = (t + d) | 0;
+                c = (c + t) | 0;
+                return (t >>> 0) / 4294967296;
+            }
+        }
+
+        // Toggles the architectural overview panel
+        function toggleInfoPanel() {
+            const panel = document.getElementById('infoPanel');
+            const btn = document.getElementById('infoBtn');
+            if (panel.style.display === "block") {
+                panel.style.display = "none";
+                btn.innerText = "[ Info ]";
+            } else {
+                panel.style.display = "block";
+                btn.innerText = "[ Close ]";
+            }
+        }
+
+        function syncInputs(val, target) {
+            let num = parseInt(val);
+            if (isNaN(num)) return;
+            if (num < 4) num = 4;
+            if (num > 32) num = 32;
+
+            if (target === 'slider') {
+                document.getElementById('passLength').value = num;
+            } else if (target === 'box') {
+                document.getElementById('passLengthNum').value = num;
+            }
+        }
+
+        function toggleKeysVisibility() {
+            const k1 = document.getElementById('keyPrimary');
+            const k2 = document.getElementById('keySecondary');
+            const k3 = document.getElementById('keySalt');
+            const toggleBtn = document.getElementById('toggleMaskBtn');
+
+            if (k1.type === "password") {
+                k1.type = "text"; k2.type = "text"; k3.type = "text";
+                toggleBtn.innerText = "Hide Keys";
+            } else {
+                k1.type = "password"; k2.type = "password"; k3.type = "password";
+                toggleBtn.innerText = "Show Keys";
+            }
+        }
+
+        function processKeyGeneration() {
+            const k1 = document.getElementById('keyPrimary').value;
+            const k2 = document.getElementById('keySecondary').value;
+            const k3 = document.getElementById('keySalt').value;
+            const site = document.getElementById('siteName').value.trim().toLowerCase();
+            
+            let length = parseInt(document.getElementById('passLengthNum').value);
+            if (isNaN(length) || length < 4) length = 4;
+            if (length > 32) length = 32;
+            
+            if(!k1 || !k2 || !k3 || !site) {
+                alert("ACCESS DENIED: All Key inputs and the Site fields must be fully populated.");
+                return;
+            }
+
+            let pool = "";
+            if(document.getElementById('chkUpper').checked) pool += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            if(document.getElementById('chkLower').checked) pool += "abcdefghijklmnopqrstuvwxyz";
+            if(document.getElementById('chkNum').checked) pool += "0123456789";
+            if(document.getElementById('chkSym').checked) pool += "!@#$%^&*()_+-=";
+
+            if(pool === "") {
+                alert("CONFIGURATION ERROR: Please select at least one Parameter Ruleset metric.");
+                return;
+            }
+
+            const combinedSalt = k1 + "::" + k2 + "::" + k3 + "::" + site;
+            const seeds = generateSeed(combinedSalt);
+            const randFunc = sfc32(seeds[0], seeds[1], seeds[2], seeds[3]);
+
+            let generatedPassword = "";
+            for(let i = 0; i < length; i++) {
+                let index = Math.floor(randFunc() * pool.length);
+                generatedPassword += pool.charAt(index);
+            }
+
+            const viewport = document.getElementById('outputViewport');
+            document.getElementById('finalPass').innerText = generatedPassword;
+            viewport.style.display = "block";
+            
+            setTimeout(() => {
+                viewport.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 50);
+        }
+
+        const handleKeyPress = (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                processKeyGeneration();
+            }
+        };
+
+        document.getElementById('keyPrimary').addEventListener('keypress', handleKeyPress);
+        document.getElementById('keySecondary').addEventListener('keypress', handleKeyPress);
+        document.getElementById('keySalt').addEventListener('keypress', handleKeyPress);
+        document.getElementById('siteName').addEventListener('keypress', handleKeyPress);
+        document.getElementById('passLengthNum').addEventListener('keypress', handleKeyPress);
+    </script>
+    <h3>Remember to delete the generated password from clipboard after use if copied</h3>
+</body>
+</html>
